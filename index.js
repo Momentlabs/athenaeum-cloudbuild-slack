@@ -32,7 +32,7 @@ const createSlackMessage = (build) => {
 
   buildName = getBuildName(build)
   let message = {
-   text: `*${buildName}* \`${build.id}\``,
+   text: `*${buildName}* BuildId: \`${build.id}\`\n*${build.status}*`,
     mrkdwn: true,
     attachments: [
       {
@@ -57,11 +57,6 @@ const getBuildName = (build) => {
 const messageFields = (build) => {
 
   fields = []
-  // Status
-  fields.push({
-    title: "Status",
-    value: build.status
-  })
 
   // Repo Stats
   if ("resolvedRepoSource" in build.sourceProvenance) {
@@ -69,7 +64,8 @@ const messageFields = (build) => {
 
     fields.push({
       title: "Git Repo",
-      value: repoSource.repoName
+      value: repoSource.repoName,
+      short: true
     })
 
     if ("_HELM_REPO_BUCKET" in build.substitutions) {
@@ -82,26 +78,30 @@ const messageFields = (build) => {
     if ("branchName" in  repoSource) {
       fields.push({
         title: "Branch",
-        value: repoSource.branchName
+        value: repoSource.branchName,
+        short: true
       })
     } else if ( "BRANCH_NAME" in build.substitutions) {
       fields.push({
         title: "Branch",
-        value: builds.substitutions["BRANCH_NAME"]
+        value: builds.substitutions["BRANCH_NAME"],
+        short: true
       })
     }
 
     if("tagName" in repoSource) {
       fields.push({
         title: "Tag",
-        value: repoSource.tagName
+        value: repoSource.tagName,
+        short: true
       })
     }
 
     if("commitSha" in repoSource ){
       fields.push({
         title: "SHA",
-        value: repoSource.commitSha
+        value: repoSource.commitSha,
+        short: true
       })
     }
   }
