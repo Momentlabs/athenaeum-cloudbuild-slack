@@ -105,7 +105,6 @@ const messageFields = (build) => {
     // Build steps
     build.steps.forEach( (step, i) => {
       
-      args = 
       fields.push({
         title: `Step ${i+1}`,
         value: step.args.join(" ")
