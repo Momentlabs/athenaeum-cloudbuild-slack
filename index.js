@@ -32,7 +32,7 @@ const createSlackMessage = (build) => {
 
   buildName = getBuildName(build)
   let message = {
-   text: `*${buildName}* BuildId: \`${build.id}\`\n*${build.status}*`,
+   text: `*${buildName}*\n*${build.status}*`,
     mrkdwn: true,
     attachments: [
       {
@@ -57,6 +57,11 @@ const getBuildName = (build) => {
 const messageFields = (build) => {
 
   fields = []
+
+  fields.push({
+    title: "Build ID",
+    value: build.id
+  })
 
   // Repo Stats
   if ("resolvedRepoSource" in build.sourceProvenance) {
