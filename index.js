@@ -28,12 +28,15 @@ const eventToBuild = (data) => {
 
 // createSlackMessage create a message from a build object.
 const createSlackMessage = (build) => {
+  color =  (build.status !== "SUCCESS") ? "danger" : "good"
+
   buildName = getBuildName(build)
   let message = {
    text: `*${buildName}* \`${build.id}\``,
     mrkdwn: true,
     attachments: [
       {
+        color: color,
         title: 'Build logs',
         title_link: build.logUrl,
         fields: messageFields(build)
@@ -47,7 +50,7 @@ const createSlackMessage = (build) => {
 const BuildNameKey = "_BUILD_NAME" 
 const getBuildName = (build) => {
   // Build Name
-  name = (BuildNameKey in build.substitutions)  ? build.substitutions[BuildNameKey] : "NO BUILD TRIGGER NAME (misssing substitution for _BUILD_NAME)"
+  name = (BuildNameKey in build.substitutions)  ? build.substitutions[BuildNameKey] : "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
   return name
 }
 
@@ -101,49 +104,88 @@ const messageFields = (build) => {
         value: repoSource.commitSha
       })
     }
-
-    // Build steps
-    build.steps.forEach( (step, i) => {
-      
-      fields.push({
-        title: `Step ${i+1}`,
-        value: step.args.join(" ")
-      })
-
-      elapsed = Date.parse(step.timing.endTime) - Date.parse(step.timing.startTime)
-      fields.push({
-        title: "Elapsed Step Time",
-        value: `${(elapsed / 1000.0).toFixed(2)} seconds`
-      })
-    })
-
-    // Buildstep outputs:
-    build.results.buildStepOutputs.forEach( (out_str) => {
-      fields.push({
-        title: "Output",
-        value: out_str
-      })
-    })
-
-    // Time
-    elapsed = Date.parse(build.finishTime) - Date.parse(build.startTime)
-    fields.push({
-      title: "Elapsed total build time",
-      value: `${(elapsed / 1000.0).toFixed(2)} seconds`
-    })
-
-    fields.push({
-      title: "Start Time",
-      value: build.startTime
-    })
-
-    fields.push({
-      title: "End Time",
-      value: build.finishTime
-    })
-
-
-
   }
+
+  // Images Built
+  if("images" in build) {
+    fields.push({
+      title: "Built Docker Images",
+      value: imagesString(build.results.images)
+    })
+  }
+
+  // Build steps
+  fields.push({
+    title: "Build Steps",
+    value: buildStepsString(build.steps)
+  })
+
+  // Buildstep outputs:
+  build.results.buildStepOutputs.forEach( (out_str) => {
+    fields.push({
+      title: "Output",
+      value: out_str
+    })
+  })
+
+  // Times
+  fields.push({
+    title: "Build time",
+    value: buildTimeString(build)
+  })
+
+  // build.timming.keys( (key) => {
+  //   value = build.timing[key]
+  //   fields.push({
+  //     title: `${key}`,
+  //     value: `${elapsedTime(value.startTime, value.EndTime)}`
+  //   })
+  // })
+
   return fields
+
+}
+
+const buildTimeString = (build) => {
+  strs = []
+  strs.push(`Elapsed Time: ${elapsedTime(build.startTime, build.finishTime)} seconds`)
+  strs.push(slackDateString(build.startTime, "Start: {date_long_pretty} at {time_secs}"))
+  strs.push(slackDateString(build.finishTime, "Finish: {date_long_pretty} at {time_secs}"))
+  return strs.join("\n")
+}
+
+const elapsedTime = (d1, d2) => {
+  return ((Date.parse(d2) - Date.parse(d1)) / 1000.0).toFixed(2)
+}
+
+const elapsedTimeSpan = (ts) => {
+  return elapsedTime(ts.startTime, ts.endTime)
+}
+
+// e: Unix epcoh timestampe
+// s: string with Slack formatting for how to print the date: e.g. "date_long"
+// https://api.slack.com/docs/message-formatting
+const slackDateString = (e, s) => {
+  e_seconds = (Date.parse(e) / 1000.0).toFixed(0)
+  // return "<!date^1392734382^Posted {date_num} {time_secs}|Posted 2014-02-18 6:39:42 AM>"
+  return `<!date^${e_seconds}^${s}|${e}>`
+}
+
+const imagesString= (images) => {
+  strs = []
+  images.forEach( (image) => {
+    strs.push(`${image.name} \`${image.digest}\``)
+    strs.push(`Push time: ${elapsedTimeSpan(image.pushTiming)} seconds`)
+  })
+  return strs.join("\n")
+}
+
+const buildStepsString = (buildSteps) => {
+  strs = []
+  buildSteps.forEach( (step, i) => {
+    strs.push(`*step ${i+1}* ${step.name}`)
+    strs.push(`args: ${step.args.join(" ")}`)
+    strs.push(`${elapsedTimeSpan(step.timing)} seconds`)
+  })
+  return strs.join("\n")
 }
