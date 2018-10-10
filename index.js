@@ -117,7 +117,7 @@ const messageFields = (build) => {
   // Images Built
   fields.push({
     title: "Built Docker Images",
-    value: buildResultsImagesString(build)
+    value: buildResultsImagesStrings(build)
   })
 
   // Build steps
