@@ -176,7 +176,7 @@ const getBuildName = (build) => {
 const DescriptionKey = "BUILD_DESCRIPTION"
 const getBuildDescription = (build) => {
   bd = getLocalEnvVal(build, DescriptionKey)
-  bd = (bd) ? "BUILD_DESCRIPTION not set in cloud build file" : bd
+  bd = (bd) ? bd : "BUILD_DESCRIPTION not set in cloud build file"
   return bd
 }
 
@@ -189,7 +189,6 @@ const RepoNameKey = "REPO_NAME"
 const getRepoName = (build) => {
   return getLocalEnvVal(build, RepoNameKey)
 }
-
 
 // We pass 'hard to get' information available at built time
 // though the environment on the first build step.
@@ -221,6 +220,15 @@ const buildResultsImagesStrings= (build, defaultString="No images built.") => {
   }
   return r
 }
+  // // Buildstep outputs
+  // if( (build.results !== undefined) && (build.results.buildStepOutputs !== undefined)) {
+  //   build.results.buildStepOutputs.forEach( (out_str) => {
+  //     fields.push({
+  //       title: "Output",
+  //       value: out_str
+  //     })
+  //   })
+  // }
 
 const buildStepsString = (build, defaultString="No build steps.") => {
   r = defaultString
@@ -238,15 +246,6 @@ const buildStepsString = (build, defaultString="No build steps.") => {
   return r
 }
 
-  // // Buildstep outputs
-  // if( (build.results !== undefined) && (build.results.buildStepOutputs !== undefined)) {
-  //   build.results.buildStepOutputs.forEach( (out_str) => {
-  //     fields.push({
-  //       title: "Output",
-  //       value: out_str
-  //     })
-  //   })
-  // }
 
 const buildTimeString = (build) => {
   strs = []
