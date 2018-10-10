@@ -187,7 +187,6 @@ const messageFields = (build) => {
   })
 
   return fields
-
 }
 
 const buildTimeString = (build) => {
