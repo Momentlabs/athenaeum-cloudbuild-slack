@@ -26,8 +26,6 @@ const eventToBuild = (data) => {
   return JSON.parse(new Buffer(data, 'base64').toString());
 }
 
-
-
 // Top level function for generating the Slack notification.
 const createSlackMessage = (build) => {
   color =  (build.status !== "SUCCESS") ? "danger" : "good"
@@ -45,7 +43,6 @@ const createSlackMessage = (build) => {
   };
   return message
 }
-
 
 // Main Message: Basic build information and success for failure.
 const makeMainMessage = (build) => {
@@ -66,7 +63,7 @@ const makeMainMessage = (build) => {
   }
 
   strs.push(`*${build.status}*`)
-  if(checkValues(build.statusDetail)) {
+  if(checkValues({build: build}, "build.statusDetail")) {
     strs.push(`${build.statusDetail}`)
   }
 
@@ -83,7 +80,7 @@ const messageFields = (build) => {
   })
 
   // Git Repo Stats: This usually only appears on a triggered build with a specific Git Repo on the trigger.
-  if( checkValues("build.sourceProvenance", "build.sourceProvenance.resolvedRepoSource")) {
+  if( checkValues({build: build}, "build.sourceProvenance", "build.sourceProvenance.resolvedRepoSource")) {
     repoSource = build.sourceProvenance["resolvedRepoSource"]
 
     fields.push({
