@@ -173,13 +173,15 @@ const messageFields = (build) => {
     value: buildStepsString(build.steps)
   })
 
-  // Buildstep outputs:
-  build.results.buildStepOutputs.forEach( (out_str) => {
-    fields.push({
-      title: "Output",
-      value: out_str
+  // Buildstep outputs
+  if( (build.results !== undefined) && (build.results.buildStepOutputs !== undefined)) {
+    build.results.buildStepOutputs.forEach( (out_str) => {
+      fields.push({
+        title: "Output",
+        value: out_str
+      })
     })
-  })
+  }
 
   // Times
   fields.push({
