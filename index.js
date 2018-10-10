@@ -75,7 +75,8 @@ const getBuildName = (build) => {
   return name
 }
 
-// We hide the description in the environment of the first step.
+// To push some runtime variables into the build messages,
+// we use step environment variables.
 // It would be nice if this API was a little um more complete.
 const DescriptionKey = "BUILD_DESCRIPTION"
 const getBuildDescription = (build) => {
@@ -217,7 +218,7 @@ const elapsedTime = (d1, d2) => {
 }
 
 const elapsedTimeSpan = (ts) => {
-  if( (ts.startTime === undefined) || (ts.endtime === undefined)) {
+  if( (ts.startTime === undefined) || (ts.endTime === undefined)) {
     return NaN
   }
   return elapsedTime(ts.startTime, ts.endTime)
