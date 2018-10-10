@@ -148,17 +148,15 @@ const messageFields = (build) => {
 // This will accept an argument list of possible values AS STRINGS and return
 // createSlackMessage create a message from a build object.
 // False if any of them are undefined (so: true if they are all defined).
-// Note: we're using eval on strings here, so be careful, side-effects could be produced.
 //
 // eg. 
 //       checkValues("build.steps", "build.steps[0]", "build.steps[0].env")
-const checkValues = (...args) => {
-
+const checkValues = (context, ...args) => {
   return args.reduce( (accum, val) => {
-    return accum ? eval(val) !== undefined : accum
+    f = Function(`return ${val} !== undefined`)
+    return accum ? f() : accum
   }, true )
 }
-
 
 // To push some runtime variables into the build messages,
 // we use step environment variables.
