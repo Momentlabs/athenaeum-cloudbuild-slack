@@ -150,7 +150,8 @@ const messageFields = (build) => {
 // False if any of them are undefined (so: true if they are all defined).
 // eg. 
 //       checkValues("build.steps", "build.steps[0]", "build.steps[0].env")
-const checkValues = (...args) => {
+const checkValues = (context=build, ...args) => {
+  build = context
   return args.reduce( (accum, val) => {
     f = Function(`return ${val} !== undefined`)
     return accum ? f() : accum
