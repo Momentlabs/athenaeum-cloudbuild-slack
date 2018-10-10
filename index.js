@@ -44,6 +44,7 @@ const createSlackMessage = (build) => {
   return message
 }
 
+// Print out the basics of what's happening.
 const makeMainMessage = (build) => {
   buildName = getBuildName(build)
   description = getBuildDescription(build)
