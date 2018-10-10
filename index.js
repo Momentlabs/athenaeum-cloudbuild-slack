@@ -71,7 +71,10 @@ const makeMainMessage = (build) => {
 // We define this in our build triggers to identify the trigger
 const BuildNameKey = "_BUILD_NAME" 
 const getBuildName = (build) => {
-  name = (BuildNameKey in build.substitutions)  ? build.substitutions[BuildNameKey] : "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
+  name = "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
+  if( (build.substitutions !== undefined) && (BuildameKey in build.substitutions) ) {
+    name = build.substitutions[BuildNameKey]
+  }
   return name
 }
 
