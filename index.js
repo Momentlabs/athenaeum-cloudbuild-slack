@@ -122,7 +122,7 @@ const messageFields = (build) => {
   })
 
   // Repo Stats
-  if ("resolvedRepoSource" in build.sourceProvenance) {
+  if ( ( build.SourcePrevenance !== undefined ) && ("resolvedRepoSource" in build.sourceProvenance) ) {
     repoSource = build.sourceProvenance["resolvedRepoSource"]
 
     fields.push({
@@ -131,26 +131,13 @@ const messageFields = (build) => {
       short: true
     })
 
-    if ("_HELM_REPO_BUCKET" in build.substitutions) {
-      fields.push({
-        title: "Hem Repository Bucket",
-        value: build.substitutions["_HELM_REPO_BUCKET"]
-      })
-    }
-
     if ("branchName" in  repoSource) {
       fields.push({
         title: "Branch",
         value: repoSource.branchName,
         short: true
       })
-    } else if ( "BRANCH_NAME" in build.substitutions) {
-      fields.push({
-        title: "Branch",
-        value: builds.substitutions["BRANCH_NAME"],
-        short: true
-      })
-    }
+    } 
 
     if("tagName" in repoSource) {
       fields.push({
