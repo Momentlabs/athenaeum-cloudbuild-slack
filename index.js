@@ -83,7 +83,7 @@ const messageFields = (build) => {
   })
 
   // Git Repo Stats: This usually only appears on a triggered build with a specific Git Repo on the trigger.
-  if( checkValues(build.sourceProvenance, build.sourceProvenance.resolvedRepoSource)) {
+  if( checkValues("build.sourceProvenance", "build.sourceProvenance.resolvedRepoSource")) {
     repoSource = build.sourceProvenance["resolvedRepoSource"]
 
     fields.push({
@@ -145,12 +145,17 @@ const messageFields = (build) => {
 
 // Depending on the the state of the build, we may or may not
 // have values populated into the build object. We have to check.
-// This will accept an argument list of possible values and return
+// This will accept an argument list of possible values AS STRINGS and return
 // createSlackMessage create a message from a build object.
 // False if any of them are undefined (so: true if they are all defined).
+// Note: we're using eval on strings here, so be careful, side-effects could be produced.
+//
+// eg. 
+//       checkValues("build.steps", "build.steps[0]", "build.steps[0].env")
 const checkValues = (...args) => {
+
   return args.reduce( (accum, val) => {
-    return accum ? val !== undefined : accum
+    return accum ? eval(val) !== undefined : accum
   }, true )
 }
 
@@ -165,7 +170,7 @@ const checkValues = (...args) => {
 const BuildNameKey = "_BUILD_NAME" 
 const getBuildName = (build) => {
   name = "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
-  if( checkValues(build.substitutions, build.substitutions[BuildNameKey])) {
+  if( checkValues("build.substitutions", "build.substitutions[BuildNameKey]")) {
     name = build.substitutions[BuildNameKey]
   }
   return name
@@ -195,7 +200,7 @@ const getRepoName = (build) => {
 // otherwise return undefined
 const getLocalEnvVal = (build, key) => {
   val = undefined
-  if(checkValues(build.steps, build.steps[0], build.steps[0].env)) {
+  if(checkValues("build.steps", "build.steps[0]", "build.steps[0].env")) {
     for( item of build.steps[0].env ) {
       e = item.split("=")
       if(e[0].indexOf(key) !== -1) {
@@ -209,7 +214,7 @@ const getLocalEnvVal = (build, key) => {
 
 const buildResultsImagesStrings= (build, defaultString="No images built.") => {
   r = defaultString
-  if(checkValues(build.results, build.results.images)) {
+  if(checkValues("build.results", "build.results.images")) {
     strs = []
     images.forEach( (image) => {
       strs.push(`${image.name} \`${image.digest}\``)
@@ -222,12 +227,12 @@ const buildResultsImagesStrings= (build, defaultString="No images built.") => {
 
 const buildStepsString = (build, defaultString="No build steps.") => {
   r = defaultString
-  if(checkValues(build.steps)) {
+  if(checkValues("build.steps")) {
     strs = []
     build.steps.forEach( (step, i) => {
       strs.push(`*step ${i+1}* ${step.name}`)
       strs.push(`args: ${step.args.join(" ")}`)
-      if(checkValues(step.timing)) {
+      if(checkValues("step.timing")) {
         strs.push(`execution time: ${elapsedTimeSpan(step.timing)} seconds`)
       }
     })
