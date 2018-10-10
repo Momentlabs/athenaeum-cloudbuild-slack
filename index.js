@@ -183,14 +183,6 @@ const messageFields = (build) => {
     value: buildTimeString(build)
   })
 
-  // build.timming.keys( (key) => {
-  //   value = build.timing[key]
-  //   fields.push({
-  //     title: `${key}`,
-  //     value: `${elapsedTime(value.startTime, value.EndTime)}`
-  //   })
-  // })
-
   return fields
 
 }
