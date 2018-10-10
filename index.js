@@ -269,6 +269,6 @@ const elapsedTimeSpan = (ts) => {
 // https://api.slack.com/docs/message-formatting
 const slackDateString = (dateTimeStr, formattedMesg) => {
   e_seconds = (Date.parse(dateTimeStr) / 1000.0).toFixed(0)  // Unix epoch in seconds.
-  return `<!date^${e_seconds}^${formatSTring}|${dateTimeStr}>`
+  return `<!date^${e_seconds}^${formatString}|${dateTimeStr}>`
 }
 
