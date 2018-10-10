@@ -29,10 +29,8 @@ const eventToBuild = (data) => {
 // createSlackMessage create a message from a build object.
 const createSlackMessage = (build) => {
   color =  (build.status !== "SUCCESS") ? "danger" : "good"
-
-  buildName = getBuildName(build)
   let message = {
-   text: `*${buildName}*\n*${build.status}*`,
+   text: makeMainMessage(build),
     mrkdwn: true,
     attachments: [
       {
@@ -46,12 +44,68 @@ const createSlackMessage = (build) => {
   return message
 }
 
+const makeMainMessage = (build) => {
+  buildName = getBuildName(build)
+  description = getBuildDescription(build)
+  strs = []
+  strs.push(`*${buildName}*`)
+  strs.push(`${description}`)
+
+  repo = getRepoName(build)
+  if(repo.indexOf("") !== -1) {
+    strs.push(`Repo: ${repo}`)
+  }
+
+  branch = getBranchName(build)
+  if(branch.indexOf("") !== -1) {
+    strs.push(`Branch: ${branch}`)
+  }
+
+  strs.push(`*${build.status}*`)
+  if("statusDetail" in build) {
+    strs.push(`${build.statusDetail}`)
+  }
+  return strs.join("\n")
+}
+
 // We define this in our build triggers to identify the trigger
 const BuildNameKey = "_BUILD_NAME" 
 const getBuildName = (build) => {
-  // Build Name
   name = (BuildNameKey in build.substitutions)  ? build.substitutions[BuildNameKey] : "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
   return name
+}
+
+// We hide the description in the environment of the first step.
+// It would be nice if this API was a little um more complete.
+const DescriptionKey = "BUILD_DESCRIPTION"
+const getBuildDescription = (build) => {
+  bd = getLocalEnvVal(build, DescriptionKey)
+  bd = (bd == "") ? "BUILD_DESCRIPTION not set in cloud build file" : bd
+  return bd
+}
+
+const BranchNameKey = "BRANCH_NAME"
+const getBranchName = (build) => {
+  return getLocalEnvVal(build, BranchNameKey)
+}
+
+const RepoNameKey = "REPO_NAME"
+const getRepoName = (build) => {
+  return getLocalEnvVal(build, RepoNameKey)
+}
+
+const getLocalEnvVal = (build, key) => {
+  val = ""
+  if((build.steps !== undefined) && build.steps.length > 0 && (build.steps[0].env !== undefined)){
+    for( item of build.steps[0].env ) {
+      e = item.split("=")
+      if(e[0].indexOf(key) !== -1) {
+        val = e[1]
+        break
+      }
+    }
+  }
+  return val
 }
 
 const messageFields = (build) => {
@@ -112,12 +166,11 @@ const messageFields = (build) => {
   }
 
   // Images Built
-  if("images" in build) {
-    fields.push({
-      title: "Built Docker Images",
-      value: imagesString(build.results.images)
-    })
-  }
+  val = 'images' in build.results ? imagesString(build.results.images) : "No images built."
+  fields.push({
+    title: "Built Docker Images",
+    value: val
+  })
 
   // Build steps
   fields.push({
@@ -164,6 +217,9 @@ const elapsedTime = (d1, d2) => {
 }
 
 const elapsedTimeSpan = (ts) => {
+  if( (ts.startTime === undefined) || (ts.endtime === undefined)) {
+    return NaN
+  }
   return elapsedTime(ts.startTime, ts.endTime)
 }
 
@@ -172,7 +228,6 @@ const elapsedTimeSpan = (ts) => {
 // https://api.slack.com/docs/message-formatting
 const slackDateString = (e, s) => {
   e_seconds = (Date.parse(e) / 1000.0).toFixed(0)
-  // return "<!date^1392734382^Posted {date_num} {time_secs}|Posted 2014-02-18 6:39:42 AM>"
   return `<!date^${e_seconds}^${s}|${e}>`
 }
 
@@ -190,7 +245,9 @@ const buildStepsString = (buildSteps) => {
   buildSteps.forEach( (step, i) => {
     strs.push(`*step ${i+1}* ${step.name}`)
     strs.push(`args: ${step.args.join(" ")}`)
-    strs.push(`${elapsedTimeSpan(step.timing)} seconds`)
+    if(step.timing !== undefined) {
+      strs.push(`execution time: ${elapsedTimeSpan(step.timing)} seconds`)
+    }
   })
   return strs.join("\n")
 }
