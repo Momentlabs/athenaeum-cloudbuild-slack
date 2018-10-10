@@ -72,7 +72,7 @@ const makeMainMessage = (build) => {
 const BuildNameKey = "_BUILD_NAME" 
 const getBuildName = (build) => {
   name = "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
-  if( (build.substitutions !== undefined) && (BuildameKey in build.substitutions) ) {
+  if( (build.substitutions !== undefined) && (BuildNameKey in build.substitutions) ) {
     name = build.substitutions[BuildNameKey]
   }
   return name
