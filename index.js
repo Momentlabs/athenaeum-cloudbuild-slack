@@ -149,13 +149,15 @@ const messageFields = (build) => {
 // createSlackMessage create a message from a build object.
 // False if any of them are undefined (so: true if they are all defined).
 // eg. 
-//       checkValues("build.steps", "build.steps[0]", "build.steps[0].env")
-const checkValues = (context=build, ...args) => {
-  build = context
-  return args.reduce( (accum, val) => {
-    f = Function(`return ${val} !== undefined`)
-    return accum ? f() : accum
-  }, true )
+//       checkValues({build: build}, "build.steps", "build.steps[0]", "build.steps[0].env")
+// The first value is a list of base variable values to check against.
+// The rest are strings of build values you want to check.
+function checkValues(ctxt, ...args) {
+  function rf (accum, val) {
+    f = Function(`return this.${val} !== undefined`)
+    return accum ? f.call(ctxt) : accum
+   }
+  return args.reduce(rf,true)
 }
 
 // To push some runtime variables into the build messages,
@@ -168,7 +170,7 @@ const checkValues = (context=build, ...args) => {
 const BuildNameKey = "_BUILD_NAME" 
 const getBuildName = (build) => {
   name = "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
-  if( checkValues("build.substitutions", "build.substitutions[BuildNameKey]")) {
+  if( checkValues({build: build}, "build.substitutions", `build.substitutions[${BuildNameKey}]`)) {
     name = build.substitutions[BuildNameKey]
   }
   return name
@@ -198,7 +200,7 @@ const getRepoName = (build) => {
 // otherwise return undefined
 const getLocalEnvVal = (build, key) => {
   val = undefined
-  if(checkValues("build.steps", "build.steps[0]", "build.steps[0].env")) {
+  if(checkValues({build: build}, "build.steps", "build.steps[0]", "build.steps[0].env")) {
     for( item of build.steps[0].env ) {
       e = item.split("=")
       if(e[0].indexOf(key) !== -1) {
@@ -212,7 +214,7 @@ const getLocalEnvVal = (build, key) => {
 
 const buildResultsImagesStrings= (build, defaultString="No images built.") => {
   r = defaultString
-  if(checkValues("build.results", "build.results.images")) {
+  if(checkValues({build: build}, "build.results", "build.results.images")) {
     strs = []
     images.forEach( (image) => {
       strs.push(`${image.name} \`${image.digest}\``)
@@ -225,12 +227,12 @@ const buildResultsImagesStrings= (build, defaultString="No images built.") => {
 
 const buildStepsString = (build, defaultString="No build steps.") => {
   r = defaultString
-  if(checkValues("build.steps")) {
+  if(checkValues({build: build}, "build.steps")) {
     strs = []
     build.steps.forEach( (step, i) => {
       strs.push(`*step ${i+1}* ${step.name}`)
       strs.push(`args: ${step.args.join(" ")}`)
-      if(checkValues("step.timing")) {
+      if(checkValues({step: step},"step.timing")) {
         strs.push(`execution time: ${elapsedTimeSpan(step.timing)} seconds`)
       }
     })
@@ -262,7 +264,7 @@ const elapsedTime = (d1, d2) => {
 }
 
 const elapsedTimeSpan = (ts) => {
-  return  checkValues( ts.startTime, ts.endTime) ? elapsedTime(ts.startTime, ts.endTime) : NaN
+  return  checkValues({ts: ts}, ts.startTime, ts.endTime) ? elapsedTime(ts.startTime, ts.endTime) : NaN
 }
 
 // dateTimeStr: Date/time string.
