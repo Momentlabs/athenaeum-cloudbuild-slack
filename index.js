@@ -157,7 +157,10 @@ const messageFields = (build) => {
   }
 
   // Images Built
-  val = 'images' in build.results ? imagesString(build.results.images) : "No images built."
+  val = "No images built."
+  if( (build.results !== undefined ) &&  ('images' in build.results)) {
+    val = imagesString(build.results.images)
+  }
   fields.push({
     title: "Built Docker Images",
     value: val
