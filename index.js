@@ -122,7 +122,7 @@ const messageFields = (build) => {
   })
 
   // Repo Stats
-  if ( ( build.SourcePrevenance !== undefined ) && ("resolvedRepoSource" in build.sourceProvenance) ) {
+  if ( ( build.sourceProvenance !== undefined ) && ("resolvedRepoSource" in build.sourceProvenance) ) {
     repoSource = build.sourceProvenance["resolvedRepoSource"]
 
     fields.push({
