@@ -227,12 +227,16 @@ const imagesString= (images) => {
 
 const buildStepsString = (buildSteps) => {
   strs = []
-  buildSteps.forEach( (step, i) => {
-    strs.push(`*step ${i+1}* ${step.name}`)
-    strs.push(`args: ${step.args.join(" ")}`)
-    if(step.timing !== undefined) {
-      strs.push(`execution time: ${elapsedTimeSpan(step.timing)} seconds`)
-    }
-  })
+  if( buildSteps === undefined) {
+    strs.push("No build steps.")
+  } else {
+    buildSteps.forEach( (step, i) => {
+      strs.push(`*step ${i+1}* ${step.name}`)
+      strs.push(`args: ${step.args.join(" ")}`)
+      if(step.timing !== undefined) {
+        strs.push(`execution time: ${elapsedTimeSpan(step.timing)} seconds`)
+      }
+    })
+  }
   return strs.join("\n")
 }
