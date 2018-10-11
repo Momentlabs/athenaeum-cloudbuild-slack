@@ -248,20 +248,17 @@ function checkValues(ctxt, ...args) {
 // TODO: A better mechanism is probably step output though that only works
 // on succesfully completion.
 
-// TODO: Use the environment not the substitution.
-const BuildNameKey = "_BUILD_NAME" 
+const BuildNameKey = "BUILD_NAME" 
 const getBuildName = (build) => {
-  let name = "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
-  if( checkValues({build: build}, "build.substitutions", `build.substitutions.${BuildNameKey}`)) {
-    name = build.substitutions[BuildNameKey]
-  }
-  return name
+  bn= getLocalEnvVal(build, BuildNameKey)
+  bn = (bn) ? bn : `No Build Name (missing ${BuildNameKey} in build step[0], or no build step[0])`
+  return bn
 }
 
 const DescriptionKey = "BUILD_DESCRIPTION"
 const getBuildDescription = (build) => {
   bd = getLocalEnvVal(build, DescriptionKey)
-  bd = (bd) ? bd : `No Build Description (missing ${DescriptionKey} in build step[0], or no build step[0]`
+  bd = (bd) ? bd : `No Build Description (missing ${DescriptionKey} in build step[0], or no build step[0])`
   return bd
 }
 
