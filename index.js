@@ -1,6 +1,9 @@
 const IncomingWebhook = require('@slack/client').IncomingWebhook;
 const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
 
+const thumbsUp = "👍"
+const thumbsDown = "👎"
+
 const webhook = new IncomingWebhook(SLACK_WEBHOOK_URL);
 
 // subscribe is the main function called by Cloud Functions.
@@ -30,13 +33,15 @@ const eventToBuild = (data) => {
 const createSlackMessage = (build) => {
   color =  (build.status !== "SUCCESS") ? "danger" : "good"
   let message = {
-   text: makeMainMessage(build),
+   text: mainMessage(build),
     mrkdwn: true,
     attachments: [
       {
         color: color,
-        title: 'Build logs',
+        title: 'Build Update',
         title_link: build.logUrl,
+        text: attachmentMessage(build),
+        pretext: pretextMessage(build),
         fields: messageFields(build)
       }
     ]
@@ -45,13 +50,26 @@ const createSlackMessage = (build) => {
 }
 
 // Main Message: Basic build information and success for failure.
-const makeMainMessage = (build) => {
-
+const mainMessage = (build) => {
   let strs = []
-
   strs.push(`*${getBuildName(build)}*`)
-  strs.push(`${getBuildDescription(build)}`)
+  return strs.join("\n")
+}
 
+const pretextMessage = (build) => {
+  let strs = []
+  status = build.status === "SUCCESS" ? thumbsUp : thumbsDown
+  status = status + ` *${build.status}*`
+  strs.push(status)
+  strs.push(`${getBuildDescription(build)}`)
+  if(checkValues({build: build}, "build.statusDetail")) {
+    strs.push(`${build.statusDetail}`)
+  }
+  return strs.join("\n")
+}
+
+const attachmentMessage = (build) => {
+  let strs = []
   repo = getRepoName(build)
   if(repo) {
     strs.push(`Repo: ${repo}`)
@@ -61,17 +79,11 @@ const makeMainMessage = (build) => {
   if(branch) {
     strs.push(`Branch: ${branch}`)
   }
-
-  strs.push(`*${build.status}*`)
-  if(checkValues({build: build}, "build.statusDetail")) {
-    strs.push(`${build.statusDetail}`)
-  }
-
+  strs.push("\n")
   return strs.join("\n")
 }
 
 const messageFields = (build) => {
-
   let fields = []
 
   fields.push({
