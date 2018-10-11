@@ -187,7 +187,7 @@ const buildStepOutputsString = (build, defaultString=undefined) => {
   return (strs.length > 0 ) ? strs.join("\n") : defaultString
 }
 
-const buildStepsString = (build, defaultString=undefined) => {
+const buildStepsString = (build) => {
   let strs = []
   if(checkValues({build: build}, "build.steps")) {
     build.steps.forEach( (step, i) => {
@@ -198,7 +198,7 @@ const buildStepsString = (build, defaultString=undefined) => {
       }
     })
   } 
-  return (strs.length > 0) ? strs.join("\n") : defaultString
+  return (strs.length > 0) ? strs.join("\n") : "No build steps found."
 }
 
 const buildTimeString = (build) => {
