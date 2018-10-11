@@ -204,6 +204,7 @@ const buildStepsString = (build) => {
 const buildTimeString = (build) => {
   let strs = []
   strs.push(`Elapsed Time: ${elapsedTime(build.startTime, build.finishTime)} seconds`)
+  strs.push(slackDateString(build.createTime, "Create: {date_long_pretty} at {time_secs}"))
   strs.push(slackDateString(build.startTime, "Start: {date_long_pretty} at {time_secs}"))
   strs.push(slackDateString(build.finishTime, "Finish: {date_long_pretty} at {time_secs}"))
   return strs.join("\n")
