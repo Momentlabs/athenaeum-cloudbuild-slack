@@ -47,7 +47,7 @@ const createSlackMessage = (build) => {
 // Main Message: Basic build information and success for failure.
 const makeMainMessage = (build) => {
 
-  strs = []
+  let strs = []
 
   strs.push(`*${getBuildName(build)}*`)
   strs.push(`${getBuildDescription(build)}`)
@@ -72,7 +72,7 @@ const makeMainMessage = (build) => {
 
 const messageFields = (build) => {
 
-  fields = []
+  let fields = []
 
   fields.push({
     title: "Build ID",
@@ -81,7 +81,7 @@ const messageFields = (build) => {
 
   // Git Repo Stats: This usually only appears on a triggered build with a specific Git Repo on the trigger.
   if( checkValues({build: build}, "build.sourceProvenance", "build.sourceProvenance.resolvedRepoSource")) {
-    repoSource = build.sourceProvenance["resolvedRepoSource"]
+    let repoSource = build.sourceProvenance["resolvedRepoSource"]
 
     fields.push({
       title: "Git Repo",
@@ -114,10 +114,10 @@ const messageFields = (build) => {
     }
   }
 
-  // Images Built
+  // Build Results
   fields.push({
-    title: "Built Docker Images",
-    value: buildResultsImagesStrings(build)
+    title: "Build Results",
+    value: buildResultsString(build)
   })
 
   // Build steps
@@ -128,13 +128,86 @@ const messageFields = (build) => {
 
   // Times
   fields.push({
-    title: "Build time",
+    title: "Build Time",
     value: buildTimeString(build)
   })
 
   return fields
 }
 
+const buildResultsString = (build) => {
+  let strs =[]
+
+  strs.push("*Docker images*")
+  strs.push(buildResultsImagesStrings(build, "No images built"))
+
+  strs.push("\n*Other artifacts*")
+  strs.push(buildResultsArtifactsString(build, "No artifacts built"))
+
+  strs.push("\n*Build step outputs*")
+  strs.push(buildStepOutputsString(build, "No step outputs created."))
+
+  return strs.join("\n")
+}
+
+const buildResultsImagesStrings = (build, defaultString=undefined) => {
+  let strs = []
+  if(checkValues({build: build}, "build.results", "build.results.images")) {
+    strs.push("Check values found something.")
+    build.results.images.forEach( (image) => {
+      strs.push(`${image.name} \`${image.digest}\``)
+      strs.push(`Push time: ${elapsedTimeSpan(image.pushTiming)} seconds`)
+    })
+  }
+  
+  return (strs.length > 0) ? strs.join("\n") : defaultString
+}
+
+const buildResultsArtifactsString = (build, defaultString=undefined) => {
+  let strs = []
+  if( checkValues({build: build}, "build.results", "build.results.numArtifiacts")) {
+    strs.push(`Number of artifacts produced: ${build.results.numArtifacts}`)
+  }
+  if(checkValues({build: build}, "build.results", "build.results.artificactManifest")) {
+    strs.push(`Artifact Manifest: ${build.results.artifactManifest}`)
+  }
+
+  return (strs.length > 0) ? strs.join("\n") : defaultString
+}
+
+const buildStepOutputsString = (build, defaultString=undefined) => {
+  let strs = []
+  if(checkValues({build: build}, "build.results", "build.results.buildStepOutputs")) {
+    build.results.buildStepOutputs.forEach( (out_str, i) => {
+      strs.push(`Step ${i+1}`)
+      strs.push(`${out_str}`)
+    })
+  }
+
+  return (strs.length > 0 ) ? strs.join("\n") : defaultString
+}
+
+const buildStepsString = (build, defaultString=undefined) => {
+  let strs = []
+  if(checkValues({build: build}, "build.steps")) {
+    build.steps.forEach( (step, i) => {
+      strs.push(`*step ${i+1}* ${step.name}`)
+      strs.push(`args: ${step.args.join(" ")}`)
+      if(checkValues({step: step},"step.timing")) {
+        strs.push(`execution time: ${elapsedTimeSpan(step.timing)} seconds`)
+      }
+    })
+  } 
+  return (strs.length > 0) ? strs.join("\n") : defaultString
+}
+
+const buildTimeString = (build) => {
+  let strs = []
+  strs.push(`Elapsed Time: ${elapsedTime(build.startTime, build.finishTime)} seconds`)
+  strs.push(slackDateString(build.startTime, "Start: {date_long_pretty} at {time_secs}"))
+  strs.push(slackDateString(build.finishTime, "Finish: {date_long_pretty} at {time_secs}"))
+  return strs.join("\n")
+}
 
 //
 // "Protected" Extraction from the build object.
@@ -143,15 +216,14 @@ const messageFields = (build) => {
 // Depending on the the state of the build, we may or may not
 // have values populated into the build object. We have to check.
 // This will accept an argument list of possible values AS STRINGS and return
-// createSlackMessage create a message from a build object.
-// False if any of them are undefined (so: true if they are all defined).
+// false if any of them are undefined (so: true if they are all defined).
 // eg. 
 //       checkValues({build: build}, "build.steps", "build.steps[0]", "build.steps[0].env")
-// The first value is a list of base variable values to check against.
-// The rest are strings of build values you want to check.
+// The first value is a context that contains the actual values that you want to check against.
+// The rest are strings of values you want to check.
 function checkValues(ctxt, ...args) {
   function rf (accum, val) {
-    f = Function(`return this.${val} !== undefined`)
+    let f = Function(`return this.${val} !== undefined`)
     return accum ? f.call(ctxt) : accum
    }
   return args.reduce(rf,true)
@@ -166,8 +238,8 @@ function checkValues(ctxt, ...args) {
 // TODO: Use the environment not the substitution.
 const BuildNameKey = "_BUILD_NAME" 
 const getBuildName = (build) => {
-  name = "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
-  if( checkValues({build: build}, "build.substitutions", `build.substitutions[${BuildNameKey}]`)) {
+  let name = "NO BUILD  NAME (misssing substitution for _BUILD_NAME)"
+  if( checkValues({build: build}, "build.substitutions", `build.substitutions.${BuildNameKey}`)) {
     name = build.substitutions[BuildNameKey]
   }
   return name
@@ -176,7 +248,7 @@ const getBuildName = (build) => {
 const DescriptionKey = "BUILD_DESCRIPTION"
 const getBuildDescription = (build) => {
   bd = getLocalEnvVal(build, DescriptionKey)
-  bd = (bd) ? bd : "BUILD_DESCRIPTION not set in cloud build file"
+  bd = (bd) ? bd : `No Build Description (missing ${DescriptionKey} in build step[0], or no build step[0]`
   return bd
 }
 
@@ -195,7 +267,7 @@ const getRepoName = (build) => {
 // This will exctract the value for Key if it's there,
 // otherwise return undefined
 const getLocalEnvVal = (build, key) => {
-  val = undefined
+  let val = undefined
   if(checkValues({build: build}, "build.steps", "build.steps[0]", "build.steps[0].env")) {
     for( item of build.steps[0].env ) {
       e = item.split("=")
@@ -208,66 +280,18 @@ const getLocalEnvVal = (build, key) => {
   return val
 }
 
-const buildResultsImagesStrings= (build, defaultString="No images built.") => {
-  r = defaultString
-  if(checkValues({build: build}, "build.results", "build.results.images")) {
-    strs = []
-    images.forEach( (image) => {
-      strs.push(`${image.name} \`${image.digest}\``)
-      strs.push(`Push time: ${elapsedTimeSpan(image.pushTiming)} seconds`)
-    })
-    r = strs.join("\n")
-  }
-  return r
-}
-  // // Buildstep outputs
-  // if( (build.results !== undefined) && (build.results.buildStepOutputs !== undefined)) {
-  //   build.results.buildStepOutputs.forEach( (out_str) => {
-  //     fields.push({
-  //       title: "Output",
-  //       value: out_str
-  //     })
-  //   })
-  // }
-
-const buildStepsString = (build, defaultString="No build steps.") => {
-  r = defaultString
-  if(checkValues({build: build}, "build.steps")) {
-    strs = []
-    build.steps.forEach( (step, i) => {
-      strs.push(`*step ${i+1}* ${step.name}`)
-      strs.push(`args: ${step.args.join(" ")}`)
-      if(checkValues({step: step},"step.timing")) {
-        strs.push(`execution time: ${elapsedTimeSpan(step.timing)} seconds`)
-      }
-    })
-    r = strs.join("\n")
-  } 
-  return r
-}
-
-
-const buildTimeString = (build) => {
-  strs = []
-  strs.push(`Elapsed Time: ${elapsedTime(build.startTime, build.finishTime)} seconds`)
-  strs.push(slackDateString(build.startTime, "Start: {date_long_pretty} at {time_secs}"))
-  strs.push(slackDateString(build.finishTime, "Finish: {date_long_pretty} at {time_secs}"))
-  return strs.join("\n")
-}
-
 const elapsedTime = (d1, d2) => {
   return ((Date.parse(d2) - Date.parse(d1)) / 1000.0).toFixed(3)
 }
 
 const elapsedTimeSpan = (ts) => {
-  return  checkValues({ts: ts}, ts.startTime, ts.endTime) ? elapsedTime(ts.startTime, ts.endTime) : NaN
+  return  checkValues({ts: ts}, "ts.startTime", "ts.endTime") ? elapsedTime(ts.startTime, ts.endTime) : NaN
 }
 
 // dateTimeStr: Date/time string.
 // formated: string with Slack formatting for how to print the date: e.g. "date_long"
 // https://api.slack.com/docs/message-formatting
 const slackDateString = (dateTimeStr, formattedMesg) => {
-  e_seconds = (Date.parse(dateTimeStr) / 1000.0).toFixed(0)  // Unix epoch in seconds.
+  let e_seconds = (Date.parse(dateTimeStr) / 1000.0).toFixed(0)  // Unix epoch in seconds.
   return `<!date^${e_seconds}^${formattedMesg}|${dateTimeStr}>`
 }
-

@@ -2,6 +2,8 @@ context = {
  b: {
    foo: 1,
    bar: 2,
+   ar: [0,1,2],
+   are: []
  }, 
  ts: 3
 }
@@ -13,5 +15,5 @@ function check(ctxt, ...args) {
   return args.reduce(rf,true)
 }
 
-v = check(context, "b", "b.foo", "b.bar", "ts.baz")
+v = check(context, "b", "b.foo", "b.bar", "b.ar[0]", "ts")
 console.log(`check() = ${v}`)
